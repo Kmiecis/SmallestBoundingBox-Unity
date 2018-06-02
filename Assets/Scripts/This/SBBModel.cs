@@ -55,7 +55,7 @@ public class SBBModel : MonoBehaviour
 
     private const int defaultCount = 20;
     private const int minCount = 4;
-    private const int maxCount = 10000;
+    private const int maxCount = 1000;
     void setCountText()
     {
         countText.text = string.Format("Count: [{0} - {1}]", minCount, maxCount);

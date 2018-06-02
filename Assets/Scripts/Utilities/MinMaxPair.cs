@@ -1,4 +1,6 @@
-﻿public class MinMaxPair
+﻿using UnityEngine;
+
+public class MinMaxPair
 {
     public float Min { get; set; }
     public float Max { get; set; }
@@ -15,7 +17,7 @@
 
     public void CheckAgainst(float value)
     {
-        if (value < Min) { Min = value; }
-        if (value > Max) { Max = value; }
+        Min = Mathf.Min(Min, value);
+        Max = Mathf.Max(Max, value);
     }
 }

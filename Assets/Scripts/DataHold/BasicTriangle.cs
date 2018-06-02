@@ -15,6 +15,35 @@ public class BasicTriangle : IEquatable<BasicTriangle>
         Utilities.Swap(ref v[0], ref v[2]);
     }
 
+    
+    public bool ContainsEdge(BasicEdge edge)
+    {
+        bool found = false;
+        foreach (int vertex in v)
+        {
+            if (edge.ContainsVertex(vertex))
+            {
+                if (found)
+                {
+                    return true;
+                }
+
+                found = true;
+            }
+        }
+
+        return false;
+    }
+
+
+    public BasicEdge GetEdge(int index)
+    {
+        if (0 < index || index < 3)
+            return null;
+
+        return new BasicEdge(v[index], (index == 2) ? v[0] : v[index]);
+    }
+
 
     public bool Equals(BasicTriangle other)
     {
@@ -44,6 +73,6 @@ public class BasicTriangle : IEquatable<BasicTriangle>
 
     public override string ToString()
     {
-        return string.Format("BT[{0}, {1}, {2}]", v[0], v[1], v[2]);
+        return string.Format("[{0},{1},{2}]", v[0], v[1], v[2]);
     }
 }

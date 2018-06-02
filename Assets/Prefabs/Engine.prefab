@@ -319,7 +319,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lineMaterial: {fileID: 0}
-  lineWidth: 0.01
+  lineWidth: 0.005
   helperLineRenderers:
   - {fileID: 120886882938848120}
   - {fileID: 120176332725273444}

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 public class Triangle : IEquatable<Triangle>
 {
@@ -16,12 +17,27 @@ public class Triangle : IEquatable<Triangle>
     /// </summary>
     public float d;
     /// <summary>
-    /// Triangle local 2D axis.
+    /// Triangle local 2D axis. Normalized.
     /// </summary>
     public Vector3 X, Y;
     
 
     public Triangle(Vector3 V1, Vector3 V2, Vector3 V3)
+    {
+        Initialize(V1, V2, V3);
+    }
+
+    public Triangle(Vector3 V, Vector3 N)
+    {
+        Vector3 xAxis;
+        Vector3 yAxis;
+        ExtMathf.AxesFromAxis(N, out xAxis, out yAxis);
+
+        Initialize(V + xAxis, V, V + yAxis);
+    }
+
+
+    void Initialize(Vector3 V1, Vector3 V2, Vector3 V3)
     {
         V = new Vector3[] { V1, V2, V3 };
 
@@ -32,6 +48,7 @@ public class Triangle : IEquatable<Triangle>
         X = (V3 - V2).normalized;
         Y = Vector3.Cross(N, X).normalized;
     }
+    
 
     /// <summary>
     /// Returns shortest distance from this Triangle to point 'V'.
@@ -84,6 +101,12 @@ public class Triangle : IEquatable<Triangle>
     public Vector3 ToWorld(Vector3 P)
     {   // General equation: P = Origin + x*X + y*Y + s*N... but s is neglected, which means we consider only points directly on plane
         return V[1] + P.x * X + P.y * Y;
+    }
+
+
+    public static Triangle FromBasicTriangle(BasicTriangle basicTriangle, List<Vector3> dataCloud)
+    {
+        return new Triangle(dataCloud[basicTriangle.v[0]], dataCloud[basicTriangle.v[1]], dataCloud[basicTriangle.v[2]]);
     }
 
 

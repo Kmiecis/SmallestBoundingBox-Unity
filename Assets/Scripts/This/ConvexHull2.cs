@@ -4,86 +4,70 @@ using System.Collections.Generic;
 
 public class ConvexHull2
 {
-    List<Vector3> m_dataCloud;
+    List<Vector3> mDataCloud;
     public List<Vector3> DataCloud
     {
-        get { return m_dataCloud; }
-        set { m_dataCloud = value; }
+        get { return mDataCloud; }
+        set { mDataCloud = value; }
     }
 
-
-    List<BasicEdge> m_basicEdges;
+    List<BasicEdge> mBasicEdges;
     public List<BasicEdge> BasicEdges
     {
-        get { return m_basicEdges; }
+        get { return mBasicEdges; }
     }
 
+    HashSet<int> mVertices;
+    public HashSet<int> Vertices
+    {
+        get
+        {
+            if (mVertices.IsNullOrEmpty())
+            {
+                mVertices = new HashSet<int>();
+                foreach (BasicEdge basicEdge in mBasicEdges)
+                {
+                    mVertices.Add(basicEdge.v[0]);
+                }
+            }
+            return mVertices;
+        }
+    }
 
-    List<Edge> m_edges;
+    List<Edge> mEdges;
     public List<Edge> Edges
     {
         get
         {
-            if (Utilities.IsNullOrEmpty(m_edges))
+            if (mEdges.IsNullOrEmpty())
             {
-                m_edges = new List<Edge>();
-                foreach (BasicEdge edge in m_basicEdges)
+                mEdges = new List<Edge>();
+                foreach (BasicEdge basicEdge in mBasicEdges)
                 {
-                    m_edges.Add(new Edge(m_dataCloud[edge.v[0]], m_dataCloud[edge.v[1]]));
+                    mEdges.Add(new Edge(mDataCloud[basicEdge.v[0]], mDataCloud[basicEdge.v[1]]));
                 }
             }
-            return m_edges;
+            return mEdges;
         }
     }
 
-
-    List<int> m_vertices;
-    public List<int> Vertices
+    Vector3 mCentroid;
+    public Vector3 Centroid
     {
         get
         {
-            if (Utilities.IsNullOrEmpty(m_vertices))
+            if (mCentroid == Vector3.zero)
             {
-                m_vertices = new List<int>();
-                int index = 0;
-                foreach (BasicEdge basicEdge in m_basicEdges)
-                {
-                    m_vertices.Add(index);
-                    m_vertices.Add(index + 1);
-                    m_vertices.Add(index + 2);
-                    index += 3;
-                }
+                mCentroid = ExtMathf.Centroid(mDataCloud.ToArray());
             }
-
-            return m_vertices;
-        }
-    }
-
-
-    List<Vector3> m_triangles;
-    public List<Vector3> Triangles
-    {
-        get
-        {
-            if (Utilities.IsNullOrEmpty(m_triangles))
-            {
-                m_triangles = new List<Vector3>();
-                Vector3 centroid = ExtMathf.Centroid(m_dataCloud.ToArray());
-                foreach (BasicEdge edge in m_basicEdges)
-                {
-                    m_triangles.Add(m_dataCloud[edge.v[0]]);
-                    m_triangles.Add(m_dataCloud[edge.v[1]]);
-                    m_triangles.Add(centroid);
-                }
-            }
-            return m_triangles;
+            return mCentroid;
         }
     }
 
 
     public ConvexHull2(List<Vector3> dataCloud)
     {
-        m_dataCloud = dataCloud;
+        mDataCloud = dataCloud;
     }
 
 
@@ -114,10 +98,10 @@ public class ConvexHull2
 
             // For remaining points, find farthest away.
             KeyValuePair<int, float> pointDistance = new KeyValuePair<int, float>(-int.MaxValue, -float.MaxValue);
-            Edge line = new Edge(m_dataCloud[left], m_dataCloud[right]);
+            Edge line = new Edge(mDataCloud[left], mDataCloud[right]);
             foreach (int point in points)
             {
-                float squaredDistance = line.CalculateSquaredDistance(m_dataCloud[point]);
+                float squaredDistance = line.CalculateSquaredDistance(mDataCloud[point]);
                 if (squaredDistance > pointDistance.Value)
                 {
                     pointDistance = new KeyValuePair<int, float>(point, squaredDistance);
@@ -130,12 +114,12 @@ public class ConvexHull2
 
             // Create two lists of points outside new edges.
             List<int> onLeft = new List<int>();
-            Edge onLeftEdge = new Edge(m_dataCloud[left], m_dataCloud[p]);
+            Edge onLeftEdge = new Edge(mDataCloud[left], mDataCloud[p]);
             List<int> onRight = new List<int>();
-            Edge onRightEdge = new Edge(m_dataCloud[p], m_dataCloud[right]);
+            Edge onRightEdge = new Edge(mDataCloud[p], mDataCloud[right]);
             foreach (int point in points)
             {
-                Vector3 P = m_dataCloud[point];
+                Vector3 P = mDataCloud[point];
                 if (onLeftEdge.CalculateRelative2DPosition(P) == -1)
                 {
                     onLeft.Add(point);
@@ -153,18 +137,18 @@ public class ConvexHull2
         };
 
         // Sort points to ease picking leftmost and rightmost.
-        m_dataCloud.Sort((a, b) => a.x.CompareTo(b.x));
+        mDataCloud.Sort((a, b) => a.x.CompareTo(b.x));
 
         int first = 0;
-        int last = m_dataCloud.Count - 1;
-        Edge edge = new Edge(m_dataCloud[first], m_dataCloud[last]);
+        int last = mDataCloud.Count - 1;
+        Edge edge = new Edge(mDataCloud[first], mDataCloud[last]);
 
         List<int> above = new List<int>();
         List<int> below = new List<int>();
 
         for (int p = 1; p < last; p++)
         {
-            if (edge.CalculateRelative2DPosition(m_dataCloud[p]) == 1)
+            if (edge.CalculateRelative2DPosition(mDataCloud[p]) == 1)
             {
                 below.Add(p);
             }
@@ -174,44 +158,75 @@ public class ConvexHull2
             }
         }
 
-        m_basicEdges.AddRange(SeekEdges(first, last, above));
-        m_basicEdges.AddRange(SeekEdges(last, first, below));
+        mBasicEdges.AddRange(SeekEdges(first, last, above));
+        mBasicEdges.AddRange(SeekEdges(last, first, below));
     }
 
 
     void ClearIfNecessary()
     {
-        if (m_basicEdges == null)
+        if (mBasicEdges == null)
         {
-            m_basicEdges = new List<BasicEdge>();
+            mBasicEdges = new List<BasicEdge>();
         }
         else
         {
-            m_basicEdges.Clear();
+            mBasicEdges.Clear();
         }
-        if (!Utilities.IsNullOrEmpty(m_vertices))
+        if (!mVertices.IsNullOrEmpty())
         {
-            m_vertices.Clear();
+            mVertices.Clear();
         }
-        if (!Utilities.IsNullOrEmpty(m_triangles))
+        if (!mEdges.IsNullOrEmpty())
         {
-            m_triangles.Clear();
+            mEdges.Clear();
         }
-        if (!Utilities.IsNullOrEmpty(m_edges))
+
+        mCentroid = Vector3.zero;
+    }
+
+
+    public void TrimDataCloudIfNecessary()
+    {
+        if (Vertices.Count == DataCloud.Count)
+        {   // Data already trimmed.
+            return;
+        }
+
+        Dictionary<int, int> exchangedVertices = new Dictionary<int, int>();
+        List<Vector3> newDataCloud = new List<Vector3>();
+
+        foreach (int p in Vertices)
         {
-            m_edges.Clear();
+            exchangedVertices.Add(p, newDataCloud.Count);
+            newDataCloud.Add(mDataCloud[p]);
         }
+
+        mVertices.Clear();
+        mVertices = new HashSet<int>(exchangedVertices.Values);
+
+        foreach (BasicEdge basicEdge in mBasicEdges)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                Debug.Assert(exchangedVertices.TryGetValue(basicEdge.v[i], out basicEdge.v[i]));
+            }
+        }
+
+        mDataCloud = newDataCloud;
     }
 
 
     public Mesh GetMesh()
     {
-        Mesh mesh = new Mesh();
+        MeshData meshData = new MeshData();
 
-        mesh.vertices = Triangles.ToArray();
-        mesh.triangles = Vertices.ToArray();
-        mesh.RecalculateNormals();
+        Vector3 centre = Centroid;
+        foreach (BasicEdge basicEdge in mBasicEdges)
+        {
+            meshData.AddTriangles(mDataCloud[basicEdge.v[0]], mDataCloud[basicEdge.v[1]], centre);
+        }
 
-        return mesh;
+        return meshData.GetMesh();
     }
 }

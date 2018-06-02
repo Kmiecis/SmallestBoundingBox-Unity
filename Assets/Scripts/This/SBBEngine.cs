@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿//#define RANDOM
+
+using UnityEngine;
 using System.Collections.Generic;
 using Enums;
 
@@ -6,23 +8,32 @@ using Enums;
 public class SBBEngine : MonoBehaviour
 {
     MeshFilter meshFilter;
-    List<Vector3> dataCloud;
 
     public DisplayDataCloud displayDataCloud;
 
     public ConvexHull2 ch2;
     public ConvexHull3 ch3;
-    public SmallestBoundingBox2 sbb2;
+    public OBB2 obb2;
     public WireframeRectangle wireframeRectangle;
-    public SmallestBoundingBox3 sbb3;
+    public OBB3 obb3;
     public WireframeCube wireframeCube;
+
+    private List<Vector3> mDataCloud;
 
 
     public void Refresh(int count, EnvironmentSpecs environment)
     {
         LoadIfNecessary();
 
+#if RANDOM
         NewDataCloud(count, environment);
+#else
+        mDataCloud = new List<Vector3>();
+        mDataCloud.Add(new Vector3(-1f, -1f, -1f));
+        mDataCloud.Add(new Vector3(1f, -1f, 1f));
+        mDataCloud.Add(new Vector3(-1f, 1f, 1f));
+        mDataCloud.Add(new Vector3(1f, 1f, -1f));
+#endif
 
         switch (environment.dataDimension)
         {
@@ -44,32 +55,40 @@ public class SBBEngine : MonoBehaviour
     void On2D()
     {
         wireframeCube.Clear();
+        ch2.DataCloud = mDataCloud;
 
-        Debug.Log(string.Format("ConvexHull2 calculation took {0}.", TimeMeasure.InSeconds(ch2.AlgorithmQuickhull).ToString("0.0000")));
-        Debug.Log(string.Format("SmallestBoundingBox2 calculation took {0}.", TimeMeasure.InSeconds(sbb2.AlgorithmRotatingCalipers).ToString("0.0000")));
+        ch2.AlgorithmQuickhull();
+        obb2.AlgorithmRotatingCalipers();
 
+        displayDataCloud.dataCloud = mDataCloud;
         meshFilter.mesh = ch2.GetMesh();
-        wireframeRectangle.FromSBB2(sbb2);
+        wireframeRectangle.FromRectangle(obb2.Rectangle);
     }
 
 
     void On3D()
     {
         wireframeRectangle.Clear();
+        ch3.DataCloud = mDataCloud;
 
-        displayDataCloud.dataCloud = dataCloud;
-        //Debug.Log(string.Format("ConvexHull3 calculation took {0}.", TimeMeasure.InSeconds(ch3.AlgorithmRandomIncremental).ToString("0.0000")));
-        dataCloud = DataCloudReductor.Reduce(dataCloud);
+        ch3.AlgorithmRandomIncremental();
+        ch3.TrimDataCloudIfNecessary();
 
-        ch3.DataCloud = dataCloud;
-        Debug.Log("New count: " + dataCloud.Count);
-        Debug.Log(string.Format("ConvexHull3 2 calculation took {0}.", TimeMeasure.InSeconds(ch3.AlgorithmRandomIncremental).ToString("0.0000")));
-        //Debug.Log(string.Format("SmallestBoundingBox3 calculation took {0}.", TimeMeasure.InSeconds(sbb3.AlgorithmHullFaces).ToString("0.0000")));
+        //obb3.AlgorithmOptimized();
+        //Debug.Log("@ OBB3 Optimized calculation took: " + TimeMeasure.InSeconds(obb3.AlgorithmAABB).ToString(Const.Decimal));
+        //Debug.Log("@ Volume calculated: " + obb3.Volume);
+        //Debug.Log("@ OBB3 Optimized calculation took: " + TimeMeasure.InSeconds(obb3.AlgorithmBruteQuaternion).ToString(Const.Decimal));
+        //Debug.Log("@ Volume calculated: " + obb3.Volume);
+        Debug.Log("@ OBB3 Optimized calculation took: " + TimeMeasure.InSeconds(obb3.AlgorithmBruteDirection).ToString(Const.Decimal));
+        Debug.Log("@ Volume calculated: " + obb3.Volume);
+        //Debug.Log("@ OBB3 Optimized calculation took: " + TimeMeasure.InSeconds(obb3.AlgorithmHullFaces).ToString(Const.Decimal));
+        //Debug.Log("@ Volume calculated: " + obb3.Volume);
+        //Debug.Log("@ OBB3 Optimized calculation took: " + TimeMeasure.InSeconds(obb3.AlgorithmOptimized).ToString(Const.Decimal));
+        //Debug.Log("@ Volume calculated: " + obb3.Volume);
 
-
-
+        displayDataCloud.dataCloud = mDataCloud;
         meshFilter.mesh = ch3.GetMesh();
-        wireframeCube.FromSBB3(sbb3);
+        wireframeCube.FromBox(obb3.Box);
     }
 
 
@@ -85,16 +104,15 @@ public class SBBEngine : MonoBehaviour
                         default:    // Use Cube
                         case DataCloud3Type.Cuboid:
                             {
-                                dataCloud = DataCloud3.Cube(count, transform.localScale, transform.position);
+                                mDataCloud = DataCloud3.Cube(count, transform.localScale, transform.position);
                                 break;
                             }
                         case DataCloud3Type.Ellipsoid:
                             {
-                                dataCloud = DataCloud3.Ellipsoid(count, transform.localScale, transform.position);
+                                mDataCloud = DataCloud3.Ellipsoid(count, transform.localScale, transform.position);
                                 break;
                             }
                     }
-                    ch3.DataCloud = dataCloud;
 
                     break;
                 }
@@ -105,16 +123,15 @@ public class SBBEngine : MonoBehaviour
                         default:    // Use Rectangle
                         case DataCloud2Type.Rectangle:
                             {
-                                dataCloud = DataCloud2.Rectangle(count, transform.localScale, transform.position);
+                                mDataCloud = DataCloud2.Rectangle(count, transform.localScale, transform.position);
                                 break;
                             }
                         case DataCloud2Type.Ellipse:
                             {
-                                dataCloud = DataCloud2.Ellipse(count, transform.localScale, transform.position);
+                                mDataCloud = DataCloud2.Ellipse(count, transform.localScale, transform.position);
                                 break;
                             }
                     }
-                    ch2.DataCloud = dataCloud;
 
                     break;
                 }
@@ -128,25 +145,21 @@ public class SBBEngine : MonoBehaviour
         {
             meshFilter = GetComponent<MeshFilter>();
         }
-        if (dataCloud == null)
-        {
-            dataCloud = new List<Vector3>();
-        }
         if (ch2 == null)
         {
-            ch2 = new ConvexHull2(dataCloud);
+            ch2 = new ConvexHull2(new List<Vector3>());
         }
-        if (sbb2 == null)
+        if (obb2 == null)
         {
-            sbb2 = new SmallestBoundingBox2(ch2);
+            obb2 = new OBB2(ch2);
         }
         if (ch3 == null)
         {
-            ch3 = new ConvexHull3(dataCloud);
+            ch3 = new ConvexHull3(new List<Vector3>());
         }
-        if (sbb3 == null)
+        if (obb3 == null)
         {
-            sbb3 = new SmallestBoundingBox3(ch3);
+            obb3 = new OBB3(ch3);
         }
     }
 }

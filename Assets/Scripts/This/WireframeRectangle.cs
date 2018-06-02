@@ -9,14 +9,26 @@ public class WireframeRectangle : MonoBehaviour
     LineRenderer lineRenderer;
 
 
-    public void FromSBB2(SmallestBoundingBox2 sbb2)
+    public void FromCorners(Vector3[] corners)
     {
         LoadIfNecessary();
 
-        Vector3[] corners = sbb2.Corners;
-
         lineRenderer.positionCount = corners.Length;
         lineRenderer.SetPositions(corners);
+    }
+
+
+    public void FromRectangle(Rectangle rectangle)
+    {
+        LoadIfNecessary();
+
+        Vector3[] corners = new Vector3[4];
+        corners[0] = rectangle.Corner;
+        corners[1] = rectangle.Corner + rectangle.Y * rectangle.Extents.y;
+        corners[2] = rectangle.Corner + rectangle.X * rectangle.Extents.x + rectangle.Y * rectangle.Extents.y;
+        corners[3] = rectangle.Corner + rectangle.X * rectangle.Extents.x;
+
+        FromCorners(corners);
     }
 
 

@@ -14,7 +14,7 @@ public class DisplayDataCloud : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (drawDataCloud && !Utilities.IsNullOrEmpty(dataCloud))
+        if (drawDataCloud && !dataCloud.IsNullOrEmpty())
         {
             Gizmos.color = Color.green;
             float radius = Mathf.Log10(dataCloud.Count) / drawDivider;

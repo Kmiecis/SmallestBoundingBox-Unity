@@ -9,11 +9,9 @@ public class WireframeCube : MonoBehaviour
     public LineRenderer[] helperLineRenderers;
 
 
-    public void FromSBB3(SmallestBoundingBox3 sbb3)
+    void FromCorners(Vector3[] corners)
     {
         LoadIfNecessary();
-
-        Vector3[] corners = sbb3.Corners;
 
         mainLineRenderer.positionCount = corners.Length;
         mainLineRenderer.SetPositions(corners);
@@ -45,6 +43,24 @@ public class WireframeCube : MonoBehaviour
         points[1] = corners[7];
         d.positionCount = positions;
         d.SetPositions(points);
+    }
+
+
+    public void FromBox(Box box)
+    {
+        LoadIfNecessary();
+
+        Vector3[] corners = new Vector3[8];
+        corners[0] = box.Corner;
+        corners[1] = box.Corner + box.X * box.Extents.x;
+        corners[2] = box.Corner + box.X * box.Extents.x + box.Y * box.Extents.y;
+        corners[3] = box.Corner + box.Y * box.Extents.y;
+        corners[4] = box.Corner + box.Y * box.Extents.y + box.Z * box.Extents.z;
+        corners[5] = box.Corner + box.X * box.Extents.x + box.Y * box.Extents.y + box.Z * box.Extents.z;
+        corners[6] = box.Corner + box.X * box.Extents.x + box.Z * box.Extents.z;
+        corners[7] = box.Corner + box.Z * box.Extents.z;
+
+        FromCorners(corners);
     }
 
 

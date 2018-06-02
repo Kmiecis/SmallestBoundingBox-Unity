@@ -67,6 +67,12 @@ public class Debugger : MonoBehaviour
 
         return false;
     }
+
+
+    private void Start()
+    {
+        Tester.TestExtMath();
+    }
 }
 
 public enum DebugOption

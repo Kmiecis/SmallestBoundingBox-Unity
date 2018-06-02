@@ -10,6 +10,19 @@ public class BasicEdge : IEquatable<BasicEdge>
     }
 
 
+    public bool ContainsVertex(int v0)
+    {
+        foreach (int vertex in v)
+        {
+            if (v0 == vertex)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public void Unorder()
     {
         if (v[0] > v[1])
@@ -32,7 +45,20 @@ public class BasicEdge : IEquatable<BasicEdge>
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
 
-        return v[0].Equals(other.v[0]) && v[1].Equals(other.v[1]);
+        bool found = false;
+        foreach (int vertex in v)
+        {
+            if (other.ContainsVertex(vertex))
+            {
+                if (found)
+                {
+                    return true;
+                }
+
+                found = true;
+            }
+        }
+        return false;
     }
 
 
@@ -50,5 +76,10 @@ public class BasicEdge : IEquatable<BasicEdge>
     public override int GetHashCode()
     {
         return Hash.GetHashCode(v[0], v[1]);
+    }
+
+    public override string ToString()
+    {
+        return string.Format("[{0},{1}]", v[0], v[1]);
     }
 }
